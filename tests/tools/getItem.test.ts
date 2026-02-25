@@ -9,7 +9,7 @@ function makeItem(overrides: Partial<Item> = {}): Item {
     id: '550e8400-e29b-41d4-a716-446655440000',
     handle: 'test-item',
     reference_id: '',
-    name: 'Test Item',
+    item_name: 'Test Item',
     description: '',
     sku: 'SKU-001',
     image_url: '',
@@ -43,7 +43,7 @@ describe('getItem tool', () => {
   });
 
   it('returns item data for valid item_id', async () => {
-    const item = makeItem({ id: 'abc-123', name: 'Cool Item' });
+    const item = makeItem({ id: 'abc-123', item_name: 'Cool Item' });
     mockItemsClient.getItem.mockResolvedValue(item);
 
     const result = await getItemHandler(
@@ -54,7 +54,7 @@ describe('getItem tool', () => {
     expect(result.isError).toBeUndefined();
     const data = JSON.parse(result.content[0].text);
     expect(data.id).toBe('abc-123');
-    expect(data.name).toBe('Cool Item');
+    expect(data.item_name).toBe('Cool Item');
     expect(mockItemsClient.getItem).toHaveBeenCalledWith('abc-123');
   });
 

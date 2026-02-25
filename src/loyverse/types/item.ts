@@ -8,15 +8,14 @@ export interface ItemVariantStore {
 }
 
 export interface ItemVariant {
-  id: string;
+  variant_id: string;
   item_id: string;
-  name: string;
   sku: string;
   option1_value: string;
   option2_value: string;
   option3_value: string;
   barcode: string;
-  price: number;
+  default_price: number;
   cost: number;
   track_inventory: boolean;
   stores: ItemVariantStore[];
@@ -34,7 +33,7 @@ export interface Item {
   id: string;
   handle: string;
   reference_id: string;
-  name: string;
+  item_name: string;
   description: string;
   sku: string;
   image_url: string;

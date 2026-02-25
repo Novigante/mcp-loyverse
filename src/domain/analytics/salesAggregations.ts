@@ -21,8 +21,8 @@ export function computeSalesSummary(
   const valid = filterValidSales(receipts);
 
   const totalSales = valid.reduce((sum, r) => sum + (r.total_money ?? 0), 0);
-  const grossSales = valid.reduce((sum, r) => sum + (r.gross_sales ?? 0), 0);
   const totalDiscounts = valid.reduce((sum, r) => sum + (r.total_discount ?? 0), 0);
+  const grossSales = totalSales + totalDiscounts;
   const totalTax = valid.reduce((sum, r) => sum + (r.total_tax ?? 0), 0);
   const totalTips = valid.reduce((sum, r) => sum + (r.tip ?? 0), 0);
   const receiptCount = valid.length;

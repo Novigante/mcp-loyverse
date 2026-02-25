@@ -48,7 +48,6 @@ function makeReceipt(overrides: Partial<Receipt> = {}): Receipt {
     total_money: 100,
     total_tax: 16,
     total_discount: 0,
-    gross_sales: 100,
     tip: 10,
     surcharge: 0,
     points_earned: 0,
@@ -81,8 +80,8 @@ describe('salesSummaryHandler', () => {
 
   it('returns correct summary shape for a period', async () => {
     const receipts: Receipt[] = [
-      makeReceipt({ total_money: 100, gross_sales: 120, total_discount: 20, total_tax: 16, tip: 10 }),
-      makeReceipt({ receipt_number: 'R-002', total_money: 200, gross_sales: 230, total_discount: 30, total_tax: 32, tip: 20 }),
+      makeReceipt({ total_money: 100, total_discount: 20, total_tax: 16, tip: 10 }),
+      makeReceipt({ receipt_number: 'R-002', total_money: 200, total_discount: 30, total_tax: 32, tip: 20 }),
     ];
     const response: ReceiptsResponse = { receipts };
     mockReceiptsClient.listReceipts.mockResolvedValue(response);

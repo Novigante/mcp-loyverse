@@ -8,7 +8,7 @@ function makeItem(overrides: Partial<Item> = {}): Item {
     id: '550e8400-e29b-41d4-a716-446655440000',
     handle: 'test-item',
     reference_id: '',
-    name: 'Test Item',
+    item_name: 'Test Item',
     description: '',
     sku: 'SKU-001',
     image_url: '',

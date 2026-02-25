@@ -23,7 +23,6 @@ function makeReceipt(overrides: Partial<Receipt> = {}): Receipt {
     total_money: 100,
     total_tax: 16,
     total_discount: 0,
-    gross_sales: 100,
     tip: 0,
     surcharge: 0,
     points_earned: 0,

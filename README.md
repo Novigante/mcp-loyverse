@@ -35,7 +35,7 @@ Instead of the AI making dozens of paginated API calls, high-level analytics too
 
 ## Quick Start
 
-### Option 1: From source
+### 1. Install
 
 ```bash
 git clone https://github.com/novigante/mcp-loyverse.git
@@ -44,22 +44,27 @@ npm install
 npm run build
 ```
 
-### Option 2: npx (if published to npm)
+### 2. Configure your MCP client
+
+#### Claude Code (CLI)
+
+The quickest way is `claude mcp add`:
 
 ```bash
-LOYVERSE_API_TOKEN=your_token npx mcp-loyverse
+claude mcp add loyverse \
+  -e LOYVERSE_API_TOKEN=your_personal_access_token_here \
+  -e DEFAULT_TIMEZONE=America/Mexico_City \
+  -- node /absolute/path/to/mcp-loyverse/dist/index.js
 ```
 
-### Configure with Claude Code
-
-Add to your MCP settings (`.mcp.json` or `~/.claude/settings.json`):
+Or create a `.mcp.json` file in your project root:
 
 ```json
 {
   "mcpServers": {
     "loyverse": {
       "command": "node",
-      "args": ["/path/to/mcp-loyverse/dist/index.js"],
+      "args": ["/absolute/path/to/mcp-loyverse/dist/index.js"],
       "env": {
         "LOYVERSE_API_TOKEN": "your_personal_access_token_here",
         "DEFAULT_TIMEZONE": "America/Mexico_City"
@@ -69,7 +74,33 @@ Add to your MCP settings (`.mcp.json` or `~/.claude/settings.json`):
 }
 ```
 
-### Verify
+#### Claude Desktop
+
+Add the same server block to your Claude Desktop config file:
+
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "loyverse": {
+      "command": "node",
+      "args": ["/absolute/path/to/mcp-loyverse/dist/index.js"],
+      "env": {
+        "LOYVERSE_API_TOKEN": "your_personal_access_token_here",
+        "DEFAULT_TIMEZONE": "America/Mexico_City"
+      }
+    }
+  }
+}
+```
+
+#### Other MCP clients
+
+Any MCP-compatible client that supports stdio transport can connect. Use the command `node /path/to/mcp-loyverse/dist/index.js` with the environment variables listed in [Configuration](#configuration).
+
+### 3. Verify
 
 Ask your AI assistant: *"Run the healthcheck tool"* — it should return server status and configuration info.
 
@@ -135,7 +166,7 @@ src/
   tools/          MCP tool definitions and handlers
     _shared/      Date range helpers, pagination, result builders
   mcp/            MCP server setup and tool registry
-  index.ts        Entrypoint (stdio transport)
+  index.ts        Entry point (stdio transport)
 ```
 
 Each tool exports `{ definition, handler }`. The `toolRegistry.ts` wires definitions into the MCP server. Analytics tools compose the receipt collector (auto-pagination) with pure aggregation functions.
@@ -157,12 +188,49 @@ Each tool exports `{ definition, handler }`. The `toolRegistry.ts` wires definit
 
 ## Roadmap
 
+- [ ] Publish to npm (`npx mcp-loyverse`)
 - [ ] Write tools (create/update items, customers)
 - [ ] OAuth 2.0 authentication flow
 - [ ] HTTP/SSE transport for remote deployment
 - [ ] Response caching with TTL
 - [ ] Webhook support for real-time updates
 - [ ] Inventory and stock level tools
+
+## Testing
+
+### Unit tests
+
+```bash
+npm test                   # 194 tests (Vitest)
+npm run test:watch         # Watch mode
+npx vitest run tests/tools/salesSummary.test.ts  # Single file
+```
+
+### Integration tests
+
+End-to-end tests that exercise all 15 tools against the live Loyverse API via the MCP protocol (stdio transport). Validates connectivity, resource reads, analytics, cross-data consistency, error handling, and pagination.
+
+**Prerequisites:** a `.env` file with a valid `LOYVERSE_API_TOKEN`.
+
+```bash
+cp .env.example .env
+# Edit .env — set your real LOYVERSE_API_TOKEN
+npm run build
+node tests/integration/run-integration.mjs
+```
+
+The script connects as an MCP client, runs **40 tests across 6 phases**, and writes raw results to `tests/integration/results.json`.
+
+| Phase | Tests | What it validates |
+|-------|-------|-------------------|
+| 1. Connectivity | 2 | Healthcheck, merchant auth |
+| 2. Resources | 13 | List/get for all 6 entities, filters |
+| 3. Analytics | 7 | Sales summary, top items, top employees |
+| 4. Cross-validation | 5 | Data consistency between tools |
+| 5. Error handling | 9 | Invalid IDs, missing params, server stability |
+| 6. Pagination | 4 | Cursor-based pagination per resource |
+
+See [`docs/integration-test-plan.md`](docs/integration-test-plan.md) for detailed validation criteria.
 
 ## Contributing
 

@@ -93,7 +93,7 @@ export interface Receipt {
   total_money: number;
   total_tax: number;
   total_discount: number;
-  gross_sales: number;
+  gross_sales?: number;
   tip: number;
   surcharge: number;
   points_earned: number;
