@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "loyverse": {
+      "command": "node",
+      "args": ["/absolute/path/to/mcp-loyverse/dist/index.js"],
+      "env": {
+        "LOYVERSE_API_TOKEN": "your_personal_access_token_here",
+        "DEFAULT_TIMEZONE": "America/Mexico_City",
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}

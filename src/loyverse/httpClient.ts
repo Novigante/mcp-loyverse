@@ -50,6 +50,7 @@ export class LoyverseHttpClient {
     } catch (err) {
       throw new Error(
         `Network error calling Loyverse API: ${err instanceof Error ? err.message : String(err)}`,
+        { cause: err },
       );
     }
 

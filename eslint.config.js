@@ -12,6 +12,27 @@ export default [
         ecmaVersion: 2022,
         sourceType: 'module',
       },
+      globals: {
+        // Node.js globals
+        process: 'readonly',
+        console: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        Buffer: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        // Web API globals available in Node 20+
+        fetch: 'readonly',
+        Response: 'readonly',
+        Request: 'readonly',
+        Headers: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+        AbortSignal: 'readonly',
+        AbortController: 'readonly',
+      },
     },
     plugins: {
       '@typescript-eslint': tsPlugin,

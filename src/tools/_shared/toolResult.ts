@@ -12,17 +12,19 @@ export function successResult(data: unknown): McpToolResult {
   };
 }
 
-export function errorResult(code: string, message: string): McpToolResult {
+export function errorResult(code: string, message: string, retryable = false, requestId?: string): McpToolResult {
+  const payload: Record<string, unknown> = { code, message, retryable };
+  if (requestId) payload.requestId = requestId;
   return {
-    content: [{ type: 'text', text: JSON.stringify({ code, message }) }],
+    content: [{ type: 'text', text: JSON.stringify(payload) }],
     isError: true,
   };
 }
 
-export function handleToolError(err: unknown): McpToolResult {
+export function handleToolError(err: unknown, requestId?: string): McpToolResult {
   if (err instanceof LoyverseApiError) {
-    return errorResult(err.errorCode, err.details);
+    return errorResult(err.errorCode, err.details, err.retryable, requestId);
   }
   const message = err instanceof Error ? err.message : String(err);
-  return errorResult('INTERNAL_ERROR', message);
+  return errorResult('INTERNAL_ERROR', message, false, requestId);
 }

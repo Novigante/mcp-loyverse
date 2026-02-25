@@ -129,8 +129,6 @@ function resolvePreset(period: string, tz: string, now: Date): ResolvedDateRange
       const tempDate = new Date(Date.UTC(local.year, local.month - 1, local.day));
       const dayOfWeek = tempDate.getUTCDay(); // 0=Sun, 1=Mon, ...
       const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-      const mondayLocal = new Date(tempDate.getTime() - daysFromMonday * 86_400_000);
-
       // Get start of that Monday in the timezone
       const mondayDate = new Date(now.getTime() - daysFromMonday * 86_400_000);
       const start = startOfDayInTz(mondayDate, tz);
@@ -183,6 +181,14 @@ export function resolveDateRange(
   }
   if (from >= to) {
     throw new Error('"from" must be before "to"');
+  }
+
+  const MAX_RANGE_DAYS = 90;
+  const rangeMs = to.getTime() - from.getTime();
+  if (rangeMs > MAX_RANGE_DAYS * 86_400_000) {
+    throw new Error(
+      `Date range exceeds maximum of ${MAX_RANGE_DAYS} days. Please narrow your query.`,
+    );
   }
 
   return { from: from.toISOString(), to: to.toISOString() };
