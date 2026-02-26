@@ -25,6 +25,9 @@
     "pos",
     "model-context-protocol"
   ],
+  "files": [
+    "dist"
+  ],
   "license": "Apache-2.0",
   "repository": {
     "type": "git",

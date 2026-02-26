@@ -224,8 +224,18 @@ See [`docs/integration-test-plan.md`](docs/integration-test-plan.md) for detaile
 2. Create a feature branch (`git checkout -b feature/my-feature`)
 3. Write tests first (TDD) — `npm test`
 4. Implement your changes
-5. Verify: `npm run build && npm test && npm run lint`
-6. Submit a pull request
+5. Run integration tests locally (requires your own `LOYVERSE_API_TOKEN`)
+6. Verify: `npm run build && npm test && npm run lint`
+7. Submit a pull request — CI must pass before merge
+
+## Releasing
+
+Releases are published to npm automatically via GitHub Actions. Only repository maintainers can create releases.
+
+1. Merge all desired changes to `main` via PR
+2. Update the version in `package.json` (`npm version patch|minor|major`) and merge via PR
+3. [Create a GitHub Release](https://github.com/novigante/mcp-loyverse/releases/new) with tag `vX.Y.Z` matching `package.json`
+4. The workflow builds, tests, and publishes to npm with [provenance](https://docs.npmjs.com/generating-provenance-statements)
 
 ## License
 
