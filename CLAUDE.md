@@ -6,6 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 npm run build              # Compile TypeScript to dist/
+npm run dev                # tsc --watch (rebuild on save)
 npm test                   # Run all tests (vitest)
 npm run test:watch         # Run tests in watch mode
 npm run lint               # ESLint on src/ and tests/
@@ -43,6 +44,7 @@ Tools are registered in `src/mcp/toolRegistry.ts` which imports all 15 tools and
 
 ## Key conventions
 
+- Strict ESM: all local imports must use `.js` extension (e.g., `import { foo } from './bar.js'`)
 - `McpToolResult` must include `[key: string]: unknown` index signature for SDK compatibility
 - `z.coerce.boolean()` does NOT handle `"false"` string correctly — use `z.preprocess()` instead
 - TDD workflow: write tests first, then implementation
