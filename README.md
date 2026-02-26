@@ -1,5 +1,6 @@
 # mcp-loyverse
 
+[![npm](https://img.shields.io/npm/v/mcp-loyverse)](https://www.npmjs.com/package/mcp-loyverse)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20-green.svg)](https://nodejs.org/)
 [![MCP](https://img.shields.io/badge/MCP-stdio-purple.svg)](https://modelcontextprotocol.io/)
@@ -35,48 +36,20 @@ Instead of the AI making dozens of paginated API calls, high-level analytics too
 
 ## Quick Start
 
-### 1. Install
+No cloning or building required — just add the server to your MCP client:
 
-```bash
-git clone https://github.com/novigante/mcp-loyverse.git
-cd mcp-loyverse
-npm install
-npm run build
-```
-
-### 2. Configure your MCP client
-
-#### Claude Code (CLI)
-
-The quickest way is `claude mcp add`:
+### Claude Code (CLI)
 
 ```bash
 claude mcp add loyverse \
   -e LOYVERSE_API_TOKEN=your_personal_access_token_here \
   -e DEFAULT_TIMEZONE=America/Mexico_City \
-  -- node /absolute/path/to/mcp-loyverse/dist/index.js
+  -- npx mcp-loyverse
 ```
 
-Or create a `.mcp.json` file in your project root:
+### Claude Desktop
 
-```json
-{
-  "mcpServers": {
-    "loyverse": {
-      "command": "node",
-      "args": ["/absolute/path/to/mcp-loyverse/dist/index.js"],
-      "env": {
-        "LOYVERSE_API_TOKEN": "your_personal_access_token_here",
-        "DEFAULT_TIMEZONE": "America/Mexico_City"
-      }
-    }
-  }
-}
-```
-
-#### Claude Desktop
-
-Add the same server block to your Claude Desktop config file:
+Add to your config file:
 
 - **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
@@ -85,8 +58,8 @@ Add the same server block to your Claude Desktop config file:
 {
   "mcpServers": {
     "loyverse": {
-      "command": "node",
-      "args": ["/absolute/path/to/mcp-loyverse/dist/index.js"],
+      "command": "npx",
+      "args": ["mcp-loyverse"],
       "env": {
         "LOYVERSE_API_TOKEN": "your_personal_access_token_here",
         "DEFAULT_TIMEZONE": "America/Mexico_City"
@@ -96,11 +69,24 @@ Add the same server block to your Claude Desktop config file:
 }
 ```
 
-#### Other MCP clients
+### Other MCP clients
 
-Any MCP-compatible client that supports stdio transport can connect. Use the command `node /path/to/mcp-loyverse/dist/index.js` with the environment variables listed in [Configuration](#configuration).
+Any MCP-compatible client that supports stdio transport can connect. Use the command `npx mcp-loyverse` with the environment variables listed in [Configuration](#configuration).
 
-### 3. Verify
+### Install from source
+
+If you prefer to run from a local clone:
+
+```bash
+git clone https://github.com/novigante/mcp-loyverse.git
+cd mcp-loyverse
+npm install
+npm run build
+```
+
+Then use `node /path/to/mcp-loyverse/dist/index.js` instead of `npx mcp-loyverse` in the examples above.
+
+### Verify
 
 Ask your AI assistant: *"Run the healthcheck tool"* — it should return server status and configuration info.
 
@@ -188,7 +174,7 @@ Each tool exports `{ definition, handler }`. The `toolRegistry.ts` wires definit
 
 ## Roadmap
 
-- [ ] Publish to npm (`npx mcp-loyverse`)
+- [x] Publish to npm (`npx mcp-loyverse`)
 - [ ] Write tools (create/update items, customers)
 - [ ] OAuth 2.0 authentication flow
 - [ ] HTTP/SSE transport for remote deployment
