@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.1] - 2026-03-02
+
+### Fixed
+
+- **Date presets ignore `DEFAULT_TIMEZONE` at month boundaries**: `startOfDayInTz` day-change detection failed when timezone offsets crossed month boundaries (e.g. `today` in `America/Mexico_City` resolved to wrong date when UTC had already crossed into the next month)
+- **Explicit date-only `from`/`to` strings parsed as UTC**: date-only strings (`YYYY-MM-DD`) are now interpreted as start/end of day in the configured `DEFAULT_TIMEZONE` instead of UTC midnight
+
+### Added
+
+- **Integration test Phase 7 — Timezone awareness**: 4 tests validating receipts and sales summaries respect the configured timezone against the live Loyverse API
+- **10 new unit tests**: month boundary presets (UTC-6 and UTC+9), date-only explicit ranges with timezone
+
 ## [0.1.0] - 2026-02-25
 
 ### Added
