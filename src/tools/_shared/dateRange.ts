@@ -173,7 +173,7 @@ const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * Parse a date string, interpreting date-only strings (YYYY-MM-DD) in the given
- * timezone instead of UTC. Returns the parsed Date and whether it was date-only.
+ * timezone instead of UTC. Returns the parsed Date.
  */
 function parseDateString(
   value: string,

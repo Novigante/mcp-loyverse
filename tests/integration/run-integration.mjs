@@ -765,7 +765,8 @@ async function phase7() {
     // period.from should be local midnight — verify the date + time in the timezone
     const fromDate = new Date(parsed.period.from);
     const fromLocalDate = toLocalDateStr(fromDate, tz);
-    const fromLocalTime = toLocalTimeStr(fromDate, tz);
+    const rawLocalTime = toLocalTimeStr(fromDate, tz);
+    const fromLocalTime = rawLocalTime === '24:00:00' ? '00:00:00' : rawLocalTime;
 
     assert(
       fromLocalDate === todayLocal,
