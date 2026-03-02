@@ -8,6 +8,7 @@
  * Requires: .env with valid LOYVERSE_API_TOKEN, project built (npm run build)
  */
 
+import 'dotenv/config';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { resolve, dirname } from 'path';
@@ -693,6 +694,164 @@ async function phase6() {
 }
 
 // ─────────────────────────────────────────
+// PHASE 7 — Timezone awareness
+// ─────────────────────────────────────────
+
+/**
+ * Format a Date as YYYY-MM-DD in the given IANA timezone.
+ * Uses Intl to avoid reimplementing the server's offset logic.
+ */
+function toLocalDateStr(date, tz) {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}
+
+function toLocalTimeStr(date, tz) {
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: tz,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).format(date);
+}
+
+async function phase7() {
+  const tz = process.env.DEFAULT_TIMEZONE || 'UTC';
+  console.log(`\n═══ Phase 7 — Timezone awareness (${tz}) ═══\n`);
+
+  const now = new Date();
+  const todayLocal = toLocalDateStr(now, tz);
+  ctx.timezone = tz;
+  ctx.todayLocal = todayLocal;
+
+  await runTest('T7.1', 'Receipts "today" preset falls within local day', async () => {
+    const { parsed } = await callTool('list_receipts', { period: 'today', limit: 250 });
+    assertArray(parsed.receipts, 'receipts');
+
+    const outOfRange = [];
+    for (const r of parsed.receipts) {
+      const receiptLocalDate = toLocalDateStr(new Date(r.created_at), tz);
+      if (receiptLocalDate !== todayLocal) {
+        outOfRange.push({
+          receipt_number: r.receipt_number,
+          created_at: r.created_at,
+          localDate: receiptLocalDate,
+        });
+      }
+    }
+
+    assert(
+      outOfRange.length === 0,
+      `${outOfRange.length} receipts outside local today (${todayLocal}): ${JSON.stringify(outOfRange.slice(0, 3))}`,
+    );
+
+    return {
+      timezone: tz,
+      todayLocal,
+      receiptCount: parsed.receipts.length,
+      allWithinLocalDay: true,
+    };
+  });
+
+  await runTest('T7.2', 'Sales summary "today" period.from = local midnight', async () => {
+    const { parsed } = await callTool('sales_summary', { period: 'today' });
+    assert(parsed.period?.from, 'missing period.from');
+
+    // period.from should be local midnight — verify the date + time in the timezone
+    const fromDate = new Date(parsed.period.from);
+    const fromLocalDate = toLocalDateStr(fromDate, tz);
+    const rawLocalTime = toLocalTimeStr(fromDate, tz);
+    const fromLocalTime = rawLocalTime === '24:00:00' ? '00:00:00' : rawLocalTime;
+
+    assert(
+      fromLocalDate === todayLocal,
+      `period.from local date is ${fromLocalDate}, expected ${todayLocal}`,
+    );
+    assert(
+      fromLocalTime === '00:00:00',
+      `period.from local time is ${fromLocalTime}, expected 00:00:00`,
+    );
+
+    return {
+      periodFrom: parsed.period.from,
+      localDate: fromLocalDate,
+      localTime: fromLocalTime,
+      receiptCount: parsed.receiptCount,
+    };
+  });
+
+  await runTest('T7.3', 'Date-only explicit range uses timezone', async () => {
+    // Use today's local date as both from and to — should resolve to full local day
+    const { parsed, isError } = await callTool('list_receipts', {
+      from: todayLocal,
+      to: todayLocal,
+    });
+
+    assert(!isError, `date-only range returned error: ${JSON.stringify(parsed)}`);
+    assertArray(parsed.receipts, 'receipts');
+
+    // Verify all receipts fall on the local date
+    const outOfRange = [];
+    for (const r of parsed.receipts) {
+      const receiptLocalDate = toLocalDateStr(new Date(r.created_at), tz);
+      if (receiptLocalDate !== todayLocal) {
+        outOfRange.push({
+          receipt_number: r.receipt_number,
+          created_at: r.created_at,
+          localDate: receiptLocalDate,
+        });
+      }
+    }
+
+    assert(
+      outOfRange.length === 0,
+      `${outOfRange.length} receipts outside local date (${todayLocal}): ${JSON.stringify(outOfRange.slice(0, 3))}`,
+    );
+
+    return {
+      dateRange: `${todayLocal} to ${todayLocal}`,
+      receiptCount: parsed.receipts.length,
+      allWithinLocalDay: true,
+    };
+  });
+
+  await runTest('T7.4', '"today" and date-only range return same receipts', async () => {
+    const { parsed: presetResult } = await callTool('list_receipts', { period: 'today', limit: 250 });
+    const { parsed: explicitResult } = await callTool('list_receipts', {
+      from: todayLocal,
+      to: todayLocal,
+      limit: 250,
+    });
+
+    assertArray(presetResult.receipts, 'preset receipts');
+    assertArray(explicitResult.receipts, 'explicit receipts');
+
+    // The date-only range covers the full day; "today" covers midnight → now.
+    // So explicit should include all of today's preset receipts.
+    const explicitNumbers = new Set(explicitResult.receipts.map((r) => r.receipt_number));
+    const missingFromExplicit = presetResult.receipts.filter(
+      (r) => !explicitNumbers.has(r.receipt_number),
+    );
+
+    assert(
+      missingFromExplicit.length === 0,
+      `${missingFromExplicit.length} "today" receipts missing from date-only range`,
+    );
+
+    return {
+      presetCount: presetResult.receipts.length,
+      explicitCount: explicitResult.receipts.length,
+      presetSubsetOfExplicit: true,
+    };
+  });
+}
+
+// ─────────────────────────────────────────
 // Markdown report generator
 // ─────────────────────────────────────────
 
@@ -703,6 +862,7 @@ const PHASES = [
   { prefix: 'T4', name: 'Cross-validations' },
   { prefix: 'T5', name: 'Error handling' },
   { prefix: 'T6', name: 'Pagination' },
+  { prefix: 'T7', name: 'Timezone awareness' },
 ];
 
 function generateMarkdownReport(output) {
@@ -849,6 +1009,7 @@ async function main() {
     await phase4();
     await phase5();
     await phase6();
+    await phase7();
   } catch (err) {
     console.error('\nFatal error during tests:', err);
   }

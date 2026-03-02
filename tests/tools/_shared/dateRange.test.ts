@@ -75,6 +75,112 @@ describe('resolveDateRange — presets with non-UTC timezone', () => {
   });
 });
 
+describe('resolveDateRange — presets at month boundary (UTC-6)', () => {
+  // Bug scenario: 2026-03-02T00:04:00Z = 2026-03-01T18:04:00 CST (UTC-6)
+  // The user is still on March 1 locally, but UTC has already crossed to March 2.
+  const MONTH_BOUNDARY_NOW = new Date('2026-03-02T00:04:00Z');
+  const tz = 'America/Mexico_City';
+
+  beforeEach(() => {
+    vi.setSystemTime(MONTH_BOUNDARY_NOW);
+  });
+
+  it('"today" resolves to March 1 local, not March 2 UTC', () => {
+    const result = resolveDateRange({ period: 'today' }, tz);
+    // Local midnight 2026-03-01T00:00:00 CST = 2026-03-01T06:00:00Z
+    expect(result.from).toBe('2026-03-01T06:00:00.000Z');
+    expect(result.to).toBe('2026-03-02T00:04:00.000Z');
+  });
+
+  it('"yesterday" resolves to Feb 28 local', () => {
+    const result = resolveDateRange({ period: 'yesterday' }, tz);
+    // Local yesterday: Feb 28 midnight CST = 2026-02-28T06:00:00Z
+    // Local yesterday end: Feb 28 23:59:59.999 CST = 2026-03-01T05:59:59.999Z
+    expect(result.from).toBe('2026-02-28T06:00:00.000Z');
+    expect(result.to).toBe('2026-03-01T05:59:59.999Z');
+  });
+
+  it('"this_month" resolves to March 1 local (still March locally)', () => {
+    const result = resolveDateRange({ period: 'this_month' }, tz);
+    // 1st of March in CST = 2026-03-01T06:00:00Z
+    expect(result.from).toBe('2026-03-01T06:00:00.000Z');
+    expect(result.to).toBe('2026-03-02T00:04:00.000Z');
+  });
+});
+
+describe('resolveDateRange — presets at month boundary (UTC+9)', () => {
+  // Positive offset: 2026-06-30T20:30:00Z = 2026-07-01T05:30:00 JST
+  // Locally it's already July 1, but UTC is still June 30.
+  const MONTH_BOUNDARY_NOW = new Date('2026-06-30T20:30:00Z');
+  const tz = 'Asia/Tokyo';
+
+  beforeEach(() => {
+    vi.setSystemTime(MONTH_BOUNDARY_NOW);
+  });
+
+  it('"today" resolves to July 1 local, not June 30 UTC', () => {
+    const result = resolveDateRange({ period: 'today' }, tz);
+    // Local midnight 2026-07-01T00:00:00 JST = 2026-06-30T15:00:00Z
+    expect(result.from).toBe('2026-06-30T15:00:00.000Z');
+    expect(result.to).toBe('2026-06-30T20:30:00.000Z');
+  });
+
+  it('"yesterday" resolves to June 30 local', () => {
+    const result = resolveDateRange({ period: 'yesterday' }, tz);
+    // Local yesterday: June 30 midnight JST = 2026-06-29T15:00:00Z
+    // Local yesterday end = 2026-06-30T14:59:59.999Z
+    expect(result.from).toBe('2026-06-29T15:00:00.000Z');
+    expect(result.to).toBe('2026-06-30T14:59:59.999Z');
+  });
+
+  it('"this_month" resolves to July 1 local (already July locally)', () => {
+    const result = resolveDateRange({ period: 'this_month' }, tz);
+    // 1st of July in JST = 2026-06-30T15:00:00Z
+    expect(result.from).toBe('2026-06-30T15:00:00.000Z');
+    expect(result.to).toBe('2026-06-30T20:30:00.000Z');
+  });
+});
+
+describe('resolveDateRange — explicit range with date-only strings', () => {
+  it('interprets date-only "from" as start of day in timezone', () => {
+    const result = resolveDateRange(
+      { from: '2026-03-01', to: '2026-03-01T23:59:59-06:00' },
+      'America/Mexico_City',
+    );
+    // from = midnight March 1 CST = 2026-03-01T06:00:00Z
+    expect(result.from).toBe('2026-03-01T06:00:00.000Z');
+  });
+
+  it('interprets date-only "to" as end of day in timezone', () => {
+    const result = resolveDateRange(
+      { from: '2026-03-01', to: '2026-03-01' },
+      'America/Mexico_City',
+    );
+    // from = midnight March 1 CST = 2026-03-01T06:00:00Z
+    // to = end of March 1 CST = 2026-03-02T05:59:59.999Z
+    expect(result.from).toBe('2026-03-01T06:00:00.000Z');
+    expect(result.to).toBe('2026-03-02T05:59:59.999Z');
+  });
+
+  it('preserves full ISO strings with explicit timezone offset', () => {
+    const result = resolveDateRange(
+      { from: '2026-03-01T00:00:00-06:00', to: '2026-03-01T23:59:59-06:00' },
+      'America/Mexico_City',
+    );
+    expect(result.from).toBe('2026-03-01T06:00:00.000Z');
+    expect(result.to).toBe('2026-03-02T05:59:59.000Z');
+  });
+
+  it('preserves full ISO strings with Z suffix', () => {
+    const result = resolveDateRange(
+      { from: '2026-03-01T06:00:00Z', to: '2026-03-02T05:59:59Z' },
+      'America/Mexico_City',
+    );
+    expect(result.from).toBe('2026-03-01T06:00:00.000Z');
+    expect(result.to).toBe('2026-03-02T05:59:59.000Z');
+  });
+});
+
 describe('resolveDateRange — explicit range', () => {
   it('accepts valid from/to ISO strings', () => {
     const result = resolveDateRange(
