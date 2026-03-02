@@ -9,6 +9,7 @@
  */
 
 import 'dotenv/config';
+import { createRequire } from 'module';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { resolve, dirname } from 'path';
@@ -16,6 +17,8 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, '../..');
+const require = createRequire(import.meta.url);
+const { version: PKG_VERSION } = require(resolve(PROJECT_ROOT, 'package.json'));
 
 // ─── State shared between tests ───
 const ctx = {};
@@ -106,7 +109,7 @@ async function phase1() {
   await runTest('T1.1', 'Healthcheck', async () => {
     const { parsed } = await callTool('healthcheck');
     assert(parsed.status === 'ok', `status=${parsed.status}`);
-    assert(parsed.version === '0.1.0', `version=${parsed.version}`);
+    assert(parsed.version === PKG_VERSION, `version=${parsed.version}`);
     assert(parsed.readOnly === true, `readOnly=${parsed.readOnly}`);
     assert(parsed.configured === true, `configured=${parsed.configured}`);
     assert(!isNaN(Date.parse(parsed.timestamp)), 'timestamp not valid ISO');
@@ -1037,7 +1040,7 @@ async function main() {
   // Output JSON for report generation
   const output = {
     timestamp: isoNow(),
-    version: '0.1.0',
+    version: PKG_VERSION,
     duration: totalTime,
     summary: counts,
     verdict,
