@@ -71,11 +71,18 @@ function startOfDayInTz(date: Date, tz: string): Date {
   const checkDay = parseInt(checkParts.day, 10);
   const origDay = parseInt(parts.day, 10);
 
-  // Calculate offset: difference between what we set (00:00 UTC) and what TZ shows
+  // Calculate offset: difference between what we set (00:00 UTC) and what TZ shows.
+  // dayDiff detects if the timezone shifted the day forward or backward.
+  // At month boundaries, large positive dayDiff (e.g. 27+) means backward wrap
+  // (orig=1, check=28 → previous month), and large negative means forward wrap
+  // (orig=31, check=1 → next month).
   let offsetHours = checkHour;
-  if (checkDay > origDay || (checkDay === 1 && origDay > 27)) {
+  const dayDiff = checkDay - origDay;
+  if (dayDiff === 1 || dayDiff < -26) {
+    // Check is 1 day ahead (or forward month wrap: orig=28+, check=1 → dayDiff ≤ -27)
     offsetHours += 24;
-  } else if (checkDay < origDay && !(checkDay > 27 && origDay === 1)) {
+  } else if (dayDiff === -1 || dayDiff > 26) {
+    // Check is 1 day behind (or backward month wrap: orig=1, check=28+ → dayDiff ≥ 27)
     offsetHours -= 24;
   }
 
@@ -162,6 +169,29 @@ function resolvePreset(period: string, tz: string, now: Date): ResolvedDateRange
   }
 }
 
+const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Parse a date string, interpreting date-only strings (YYYY-MM-DD) in the given
+ * timezone instead of UTC. Returns the parsed Date and whether it was date-only.
+ */
+function parseDateString(
+  value: string,
+  timezone: string,
+  mode: 'start' | 'end',
+): Date {
+  if (DATE_ONLY_RE.test(value)) {
+    // Date-only: interpret as start or end of that day in the configured timezone
+    const dateParts = new Date(value + 'T12:00:00Z'); // noon UTC to avoid any date-shift
+    const start = startOfDayInTz(dateParts, timezone);
+    if (mode === 'end') {
+      return new Date(start.getTime() + 86_400_000 - 1);
+    }
+    return start;
+  }
+  return new Date(value);
+}
+
 export function resolveDateRange(
   input: DateRangeInput,
   timezone: string,
@@ -170,8 +200,8 @@ export function resolveDateRange(
     return resolvePreset(input.period, timezone, new Date());
   }
 
-  const from = new Date(input.from);
-  const to = new Date(input.to);
+  const from = parseDateString(input.from, timezone, 'start');
+  const to = parseDateString(input.to, timezone, 'end');
 
   if (isNaN(from.getTime())) {
     throw new Error(`Invalid "from" date: ${input.from}`);
